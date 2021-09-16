@@ -63,7 +63,6 @@ export class MonitoredExperimentPointRepository extends Repository<MonitoredExpe
       });
   }
 
-
   public async getMonitorExperimentPointForExport(
     offset: number,
     limit: number,

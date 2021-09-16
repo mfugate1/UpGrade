@@ -171,7 +171,7 @@ export class ExperimentAssignmentService {
       // 8. INCORRECT_GROUP_OR_WORKING_GROUP = 'participant's group or working group is incorrect' (line 364 pass enrolmentcode and addError as 3rd param)
       // 9. NO_GROUP_SPECIFIED = 'participant excluded from the group-assignment experiment - no group specified', (line 321)
       // update enrollment code
-      if (individualAssignmentDocumentExist && enrollmentCode == ENROLLMENT_CODE.ASSIGN) {
+      if (individualAssignmentDocumentExist && enrollmentCode === ENROLLMENT_CODE.ASSIGN) {
         enrollmentCode = ENROLLMENT_CODE.ENROLL;
         await this.individualAssignmentRepository.update({ id: individualAssignmentDocumentExist.id }, { enrollmentCode });
       }

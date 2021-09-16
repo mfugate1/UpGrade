@@ -1,5 +1,6 @@
 import {MigrationInterface, QueryRunner} from 'typeorm';
 
+// tslint:disable-next-line: class-name
 export class enrollmentCodeChanges1631178327857 implements MigrationInterface {
     public name = 'enrollmentCodeChanges1631178327857';
 
