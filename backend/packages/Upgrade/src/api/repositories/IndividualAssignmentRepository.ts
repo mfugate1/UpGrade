@@ -2,7 +2,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { IndividualAssignment } from '../models/IndividualAssignment';
 import repositoryError from './utils/repositoryError';
 import { ASSIGNMENT_TYPE } from '../../types';
-import { ENROLLMENT_CODE } from 'upgrade_types';
+// import { ENROLLMENT_CODE } from 'upgrade_types';
 
 @EntityRepository(IndividualAssignment)
 export class IndividualAssignmentRepository extends Repository<IndividualAssignment> {
