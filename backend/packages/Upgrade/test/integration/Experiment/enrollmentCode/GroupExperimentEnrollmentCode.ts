@@ -74,11 +74,11 @@ export default async function testCase(): Promise<void> {
     ])
   );
 
-  // get all experiment condition for user 2
+  // get all experiment condition for user 1
   experimentConditionAssignments = await getAllExperimentCondition(experimentUsers[0].id);
   checkExperimentAssignedIsNull(experimentConditionAssignments, experimentName, experimentPoint);
 
-  // mark experiment point for user 2
+  // mark experiment point for user 1
   markedExperimentPoint = await markExperimentPoint(experimentUsers[0].id, experimentName, experimentPoint, condition);
   checkMarkExperimentPointForUser(
     markedExperimentPoint,
@@ -86,7 +86,7 @@ export default async function testCase(): Promise<void> {
     experimentName,
     experimentPoint,
     2,
-    ENROLLMENT_CODE.STUDENT_EXCLUDED
+    ENROLLMENT_CODE.PARTICIPANT_ON_EXCLUSION_LIST
   );
 
   // get all experiment condition for user 2
@@ -101,14 +101,14 @@ export default async function testCase(): Promise<void> {
     experimentName,
     experimentPoint,
     1,
-    ENROLLMENT_CODE.GROUP_EXCLUDED
+    ENROLLMENT_CODE.GROUP_ON_EXCLUSION_LIST
   );
 
-  // get all experiment condition for user 2
+  // get all experiment condition for user 3
   experimentConditionAssignments = await getAllExperimentCondition(experimentUsers[2].id);
   checkExperimentAssignedIsNotDefault(experimentConditionAssignments, experimentName, experimentPoint);
 
-  // mark experiment point for user 2
+  // mark experiment point for user 3
   markedExperimentPoint = await markExperimentPoint(experimentUsers[2].id, experimentName, experimentPoint, condition);
   checkMarkExperimentPointForUser(
     markedExperimentPoint,
@@ -116,7 +116,7 @@ export default async function testCase(): Promise<void> {
     experimentName,
     experimentPoint,
     1,
-    ENROLLMENT_CODE.INCLUDED
+    ENROLLMENT_CODE.ENROLL
   );
 
   await experimentService.updateState(experimentId, EXPERIMENT_STATE.ENROLLMENT_COMPLETE, user);
@@ -135,11 +135,11 @@ export default async function testCase(): Promise<void> {
     ])
   );
 
-  // check for experiment condition for user 3
+  // check for experiment condition for user 4
   experimentConditionAssignments = await getAllExperimentCondition(experimentUsers[3].id);
   checkExperimentAssignedIsNotDefault(experimentConditionAssignments, experimentName, experimentPoint);
 
-  // mark experiment point for user 2
+  // mark experiment point for user 4
   markedExperimentPoint = await markExperimentPoint(experimentUsers[3].id, experimentName, experimentPoint, condition);
   checkMarkExperimentPointForUser(
     markedExperimentPoint,
@@ -147,7 +147,7 @@ export default async function testCase(): Promise<void> {
     experimentName,
     experimentPoint,
     1,
-    ENROLLMENT_CODE.PRIOR_EXPERIMENT_ENROLLING
+    ENROLLMENT_CODE.REACHED_PRIOR
   );
 
   // get all experiment condition for user 2
@@ -162,14 +162,14 @@ export default async function testCase(): Promise<void> {
     experimentName,
     experimentPoint,
     2,
-    ENROLLMENT_CODE.GROUP_EXCLUDED
+    ENROLLMENT_CODE.GROUP_ON_EXCLUSION_LIST
   );
 
-  // get all experiment condition for user 2
+  // get all experiment condition for user 3
   experimentConditionAssignments = await getAllExperimentCondition(experimentUsers[2].id);
   checkExperimentAssignedIsNotDefault(experimentConditionAssignments, experimentName, experimentPoint);
 
-  // mark experiment point for user 2
+  // mark experiment point for user 3
   markedExperimentPoint = await markExperimentPoint(experimentUsers[2].id, experimentName, experimentPoint, condition);
   checkMarkExperimentPointForUser(
     markedExperimentPoint,
@@ -177,7 +177,7 @@ export default async function testCase(): Promise<void> {
     experimentName,
     experimentPoint,
     2,
-    ENROLLMENT_CODE.INCLUDED
+    ENROLLMENT_CODE.ENROLL
   );
 
   // change back to ENROLLING
@@ -197,11 +197,11 @@ export default async function testCase(): Promise<void> {
     ])
   );
 
-  // check for experiment condition for user 3
+  // check for experiment condition for user 4
   experimentConditionAssignments = await getAllExperimentCondition(experimentUsers[3].id);
   checkExperimentAssignedIsNull(experimentConditionAssignments, experimentName, experimentPoint);
 
-  // mark experiment point for user 2
+  // mark experiment point for user 4
   markedExperimentPoint = await markExperimentPoint(experimentUsers[3].id, experimentName, experimentPoint, condition);
   checkMarkExperimentPointForUser(
     markedExperimentPoint,
@@ -209,7 +209,7 @@ export default async function testCase(): Promise<void> {
     experimentName,
     experimentPoint,
     2,
-    ENROLLMENT_CODE.PRIOR_EXPERIMENT_ENROLLING
+    ENROLLMENT_CODE.REACHED_PRIOR
   );
 
   // get all experiment condition for user 2
@@ -224,14 +224,14 @@ export default async function testCase(): Promise<void> {
     experimentName,
     experimentPoint,
     3,
-    ENROLLMENT_CODE.GROUP_EXCLUDED
+    ENROLLMENT_CODE.GROUP_ON_EXCLUSION_LIST
   );
 
-  // get all experiment condition for user 2
+  // get all experiment condition for user 3
   experimentConditionAssignments = await getAllExperimentCondition(experimentUsers[2].id);
   checkExperimentAssignedIsNotDefault(experimentConditionAssignments, experimentName, experimentPoint);
 
-  // mark experiment point for user 2
+  // mark experiment point for user 3
   markedExperimentPoint = await markExperimentPoint(experimentUsers[2].id, experimentName, experimentPoint, condition);
   checkMarkExperimentPointForUser(
     markedExperimentPoint,
@@ -239,6 +239,6 @@ export default async function testCase(): Promise<void> {
     experimentName,
     experimentPoint,
     3,
-    ENROLLMENT_CODE.INCLUDED
+    ENROLLMENT_CODE.ENROLL
   );
 }

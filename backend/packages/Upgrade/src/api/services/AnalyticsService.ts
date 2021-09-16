@@ -401,19 +401,34 @@ export class AnalyticsService {
         });
 
         toLogDocument.forEach((data) => {
-          let enrollmentCodeNum = 3;
+          let enrollmentCodeNum = 8;
           switch (data.enrollmentCode) {
-            case ENROLLMENT_CODE.INCLUDED:
+            case ENROLLMENT_CODE.ASSIGN:
               enrollmentCodeNum = 0;
               break;
-            case ENROLLMENT_CODE.PRIOR_EXPERIMENT_ENROLLING:
+            case ENROLLMENT_CODE.ENROLL:
               enrollmentCodeNum = 1;
               break;
-            case ENROLLMENT_CODE.STUDENT_EXCLUDED:
+            case ENROLLMENT_CODE.ERROR:
               enrollmentCodeNum = 2;
               break;
-            case ENROLLMENT_CODE.GROUP_EXCLUDED:
+            case ENROLLMENT_CODE.REACHED_PRIOR:
               enrollmentCodeNum = 3;
+              break;
+            case ENROLLMENT_CODE.PARTICIPANT_ON_EXCLUSION_LIST:
+              enrollmentCodeNum = 4;
+              break;
+            case ENROLLMENT_CODE.GROUP_ON_EXCLUSION_LIST:
+              enrollmentCodeNum = 5;
+              break;
+            case ENROLLMENT_CODE.EXCLUDED_DUE_TO_GROUP_LOGIC:
+              enrollmentCodeNum = 6;
+              break;
+            case ENROLLMENT_CODE.INVALID_GROUP_OR_WORKING_GROUP:
+              enrollmentCodeNum = 7;
+              break;
+            case ENROLLMENT_CODE.NO_GROUP_SPECIFIED:
+              enrollmentCodeNum = 8;
               break;
             default:
               enrollmentCodeNum = 0;
@@ -465,8 +480,8 @@ export class AnalyticsService {
       const experimentJsonBuffer = fs.readFileSync(`${folderPath}${experimentJson}`);
 
       // delete the file from local store
-      fs.unlinkSync(`${folderPath}${experimentCSV}`);
-      fs.unlinkSync(`${folderPath}${experimentJson}`);
+      // fs.unlinkSync(`${folderPath}${experimentCSV}`);
+      // fs.unlinkSync(`${folderPath}${experimentJson}`);
 
       // upload the csv to s3
       await Promise.all([

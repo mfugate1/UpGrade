@@ -2,6 +2,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { IndividualAssignment } from '../models/IndividualAssignment';
 import repositoryError from './utils/repositoryError';
 import { ASSIGNMENT_TYPE } from '../../types';
+import { ENROLLMENT_CODE } from 'upgrade_types';
 
 @EntityRepository(IndividualAssignment)
 export class IndividualAssignmentRepository extends Repository<IndividualAssignment> {
@@ -46,6 +47,19 @@ export class IndividualAssignmentRepository extends Repository<IndividualAssignm
 
     return result.raw;
   }
+
+  // public async updateEnrollmentCode(
+  //   enrollmentCode: ENROLLMENT_CODE,
+  //   ids: string[]
+  // ): Promise<IndividualAssignment[]> {
+  //   const result = await this.createQueryBuilder('individualAssignment')
+  //     .update()
+  //     .set({ enrollmentCode })
+  //     .where('id IN (:...values) AND enrollmentCode is null', { values: ids })
+  //     .execute();
+
+  //   return result.raw;
+  // }
 
   public async findIndividualAssignmentsByExperimentIdAndAlgorithm(
     experimentId: string,

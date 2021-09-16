@@ -1,7 +1,6 @@
 import { EntityRepository, EntityManager, Repository, getConnection } from 'typeorm';
 import { MonitoredExperimentPoint } from '../models/MonitoredExperimentPoint';
 import repositoryError from './utils/repositoryError';
-import { ENROLLMENT_CODE } from 'upgrade_types';
 import { ExperimentPartition } from '../models/ExperimentPartition';
 import { IndividualAssignment } from '../models/IndividualAssignment';
 import { ExperimentUser } from '../models/ExperimentUser';
@@ -64,18 +63,6 @@ export class MonitoredExperimentPointRepository extends Repository<MonitoredExpe
       });
   }
 
-  public async updateEnrollmentCode(
-    enrollmentCode: ENROLLMENT_CODE,
-    ids: string[]
-  ): Promise<MonitoredExperimentPoint[]> {
-    const result = await this.createQueryBuilder('monitoredExperiment')
-      .update()
-      .set({ enrollmentCode })
-      .where('id IN (:...values) AND enrollmentCode is null', { values: ids })
-      .execute();
-
-    return result.raw;
-  }
 
   public async getMonitorExperimentPointForExport(
     offset: number,
@@ -87,7 +74,6 @@ export class MonitoredExperimentPointRepository extends Repository<MonitoredExpe
       .createQueryBuilder()
       .select([
         'user.id',
-        '"monitoredExperiment"."enrollmentCode"',
         '"monitoredExperiment"."experimentId"',
         'conditions.conditionCode',
         'experiment.id',
@@ -101,7 +87,7 @@ export class MonitoredExperimentPointRepository extends Repository<MonitoredExpe
       .from((subQuery) => {
         return subQuery
           .select('*')
-          .from(MonitoredExperimentPoint, 'monitoredExperiment')
+          // .from(MonitoredExperimentPoint, 'monitoredExperiment')
           .where('"monitoredExperiment"."experimentId" IN (:...ids)', { ids: monitorPointIds })
           .skip(offset)
           .take(limit);
@@ -117,7 +103,7 @@ export class MonitoredExperimentPointRepository extends Repository<MonitoredExpe
       .where('experiment.id = :id', { id: experimentId })
       .groupBy('user.id')
       .addGroupBy('"monitoredExperiment"."experimentId"')
-      .addGroupBy('"monitoredExperiment"."enrollmentCode"')
+      // .addGroupBy('"monitoredExperiment"."enrollmentCode"')
       .addGroupBy('conditions.conditionCode')
       .addGroupBy('partition.expId')
       .addGroupBy('partition.expPoint')

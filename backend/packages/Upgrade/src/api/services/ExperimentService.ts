@@ -373,15 +373,14 @@ export class ExperimentService {
       return;
     }
 
+    // console.log("monitored exp updateEnrollmentCode");
     // update document of monitoredExperimentPoints to ENROLLMENT CODE STUDENT EXCLUDED
-    if (experiment.consistencyRule !== CONSISTENCY_RULE.EXPERIMENT) {
-      const monitoredExperimentIds = monitoredExperimentPoints.map((monitoredPoint) => monitoredPoint.id);
-
-      await this.monitoredExperimentPointRepository.updateEnrollmentCode(
-        ENROLLMENT_CODE.STUDENT_EXCLUDED,
-        monitoredExperimentIds
-      );
-    }
+    // if (experiment.consistencyRule !== CONSISTENCY_RULE.EXPERIMENT) {
+    //   const monitoredExperimentIds = monitoredExperimentPoints.map((monitoredPoint) => monitoredPoint.id);
+      // await this.monitoredExperimentPointRepository.updateEnrollmentCode(
+      //   monitoredExperimentIds
+      // );
+    // }
 
     const userDetails = await this.userRepository.findByIds([...uniqueUserIds]);
     // populate Individual and Group Exclusion Table
@@ -404,6 +403,16 @@ export class ExperimentService {
       });
 
       await this.groupExclusionRepository.saveRawJson(groupExclusionDocs);
+      // updating enrollment code in individual exclusion:
+      const individualExclusionDocs = [...uniqueUserIds].map((userId) => {
+        const user = userDetails.find((userDetail) => userDetail.id === userId);
+        return {
+          experiment,
+          user,
+          enrollmentCode: ENROLLMENT_CODE.GROUP_ON_EXCLUSION_LIST,
+        };
+      } );
+      this.individualExclusionRepository.saveRawJson(individualExclusionDocs);
     }
 
     if (consistencyRule === CONSISTENCY_RULE.INDIVIDUAL || consistencyRule === CONSISTENCY_RULE.GROUP) {
@@ -415,6 +424,7 @@ export class ExperimentService {
           user,
           experiment,
           assignmentType: isPreviewUser ? ASSIGNMENT_TYPE.MANUAL : ASSIGNMENT_TYPE.ALGORITHMIC,
+          enrollmentCode: ENROLLMENT_CODE.REACHED_PRIOR,
         };
       });
       await this.individualExclusionRepository.saveRawJson(individualExclusionDocs);

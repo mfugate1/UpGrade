@@ -18,7 +18,7 @@ import { MonitoredExperimentPointRepository } from '../repositories/MonitoredExp
 import { ExperimentRepository } from '../repositories/ExperimentRepository';
 import { GroupAssignmentRepository } from '../repositories/GroupAssignmentRepository';
 import { IndividualAssignmentRepository } from '../repositories/IndividualAssignmentRepository';
-import { IndividualAssignment } from '../models/IndividualAssignment';
+import { getIndividualExperimentPointID, IndividualAssignment } from '../models/IndividualAssignment';
 import { GroupAssignment } from '../models/GroupAssignment';
 import { IndividualExclusion } from '../models/IndividualExclusion';
 import { GroupExclusion } from '../models/GroupExclusion';
@@ -50,6 +50,7 @@ import { ILogInput } from 'upgrade_types';
 import { MonitoredExperimentPointLogRepository } from '../repositories/MonitorExperimentPointLogRepository';
 import { StateTimeLogsRepository } from '../repositories/StateTimeLogsRepository';
 import { StateTimeLog } from '../models/StateTimeLogs';
+// import { experiment } from 'packages/Upgrade/test/integration/mockData/experiment/raw';
 
 @Service()
 export class ExperimentAssignmentService {
@@ -154,55 +155,32 @@ export class ExperimentAssignmentService {
           Promise.resolve([]),
       ];
       const result = await Promise.all(assignmentPromise);
-      const individualAssignments: IndividualAssignment[] = result[0];
-      const groupExcluded: GroupAssignment[] = result[2];
 
       await this.updateExclusionFromMarkExperimentPoint(userDoc, workingGroup, experimentPartition.experiment, result);
-
-      // find monitored document
-      const monitoredDocumentExist = await this.monitoredExperimentPointRepository.findOne({
-        id: getMonitoredExperimentPointID(experimentId, userDoc.id),
+      const individualAssignmentDocumentExist = await this.individualAssignmentRepository.findOne({
+        id: getIndividualExperimentPointID(experimentId, userDoc.id),
       });
 
-      // new document of user will be saved
-      if (!monitoredDocumentExist) {
-        if (experiment.state === EXPERIMENT_STATE.ENROLLING) {
-          enrollmentCode = ENROLLMENT_CODE.INCLUDED;
-          if (experiment.consistencyRule === CONSISTENCY_RULE.INDIVIDUAL) {
-            if (individualAssignments.length === 0) {
-              enrollmentCode = ENROLLMENT_CODE.STUDENT_EXCLUDED;
-            }
-          } else if (experiment.consistencyRule === CONSISTENCY_RULE.GROUP) {
-            if (groupExcluded.length > 0) {
-              enrollmentCode = ENROLLMENT_CODE.GROUP_EXCLUDED;
-            }
-          } else if (experiment.consistencyRule === CONSISTENCY_RULE.EXPERIMENT) {
-            enrollmentCode = ENROLLMENT_CODE.INCLUDED;
-          }
-        } else if (experiment.state === EXPERIMENT_STATE.ENROLLMENT_COMPLETE) {
-          if (experiment.consistencyRule !== CONSISTENCY_RULE.EXPERIMENT) {
-            enrollmentCode = ENROLLMENT_CODE.PRIOR_EXPERIMENT_ENROLLING;
-          }
-        }
-      } else if (
-        monitoredDocumentExist &&
-        monitoredDocumentExist.enrollmentCode === null &&
-        experiment.state === EXPERIMENT_STATE.ENROLLING &&
-        experiment.consistencyRule === CONSISTENCY_RULE.EXPERIMENT
-      ) {
-        enrollmentCode = ENROLLMENT_CODE.INCLUDED;
-
-        // update enrollment code
-        await this.monitoredExperimentPointRepository.update({ id: monitoredDocumentExist.id }, { enrollmentCode });
+      // 1. ASSIGN = 'participant was assigned a condition in the experiment',
+      // 2. ENROLL = 'participant was enrolled in the experiment (as a result of the mark() call)',
+      // 3. ERROR = 'participant excluded due to unspecified error',
+      // 4. REACHED_PRIOR = 'participant reached experiment point prior to experiment enrolling', ( experimentservice 418)
+      // 5. PARTICIPANT_ON_EXCLUSION_LIST = 'participant was on the exclusion list', (line 392 if userexcluded, update in ind exclu table)
+      // 6. GROUP_ON_EXCLUSION_LIST = 'participant’s group was on the exclusion list', (line 402)
+      // 7. EXCLUDED_DUE_TO_GROUP_LOGIC = 'participant excluded due to group assignment logic', (line 1054 entry in ind exc)
+      // 8. INCORRECT_GROUP_OR_WORKING_GROUP = 'participant's group or working group is incorrect' (line 364 pass enrolmentcode and addError as 3rd param)
+      // 9. NO_GROUP_SPECIFIED = 'participant excluded from the group-assignment experiment - no group specified', (line 321)
+      // update enrollment code
+      if (individualAssignmentDocumentExist && enrollmentCode == ENROLLMENT_CODE.ASSIGN) {
+        enrollmentCode = ENROLLMENT_CODE.ENROLL;
+        await this.individualAssignmentRepository.update({ id: individualAssignmentDocumentExist.id }, { enrollmentCode });
       }
     }
-
     // adding in monitored experiment point table
     const monitoredDocument = await this.monitoredExperimentPointRepository.saveRawJson({
       user: userDoc,
       condition,
       experimentId,
-      enrollmentCode,
     });
 
     /**
@@ -259,9 +237,11 @@ export class ExperimentAssignmentService {
       /**
        * Check already assigned group experiment or exclude group experiment
        * @param filteredGroupExperiments
+       * @param enrollmentCode
        * @param addError
        */
-      const checkValidGroupExperiment = async (filteredGroupExperiments: Experiment[], addError: boolean = true) => {
+      // tslint:disable-next-line:max-line-length
+      const checkValidGroupExperiment = async (filteredGroupExperiments: Experiment[], enrollmentCodeValue: any = ENROLLMENT_CODE, addError: boolean = true) => {
         // fetch individual assignment for group experiments
         const individualAssignments = await (filteredGroupExperiments.length > 0
           ? this.individualAssignmentRepository.findAssignment(
@@ -315,11 +295,15 @@ export class ExperimentAssignmentService {
 
         // exclude user whose group information is not provided
         if (experimentToExclude.length > 0) {
+          enrollmentCodeValue = ENROLLMENT_CODE.NO_GROUP_SPECIFIED;
           await this.individualExclusionRepository.saveRawJson(
             experimentToExclude.map((experiment) => {
               return {
                 experiment,
                 user: experimentUser,
+                // doubt
+                // enrollmentCode: ENROLLMENT_CODE.NO_GROUP_SPECIFIED
+                enrollmentCode: enrollmentCodeValue,
               };
             })
           );
@@ -351,8 +335,21 @@ export class ExperimentAssignmentService {
         });
 
         let addError = false;
+        let enrollmentCodeValue;
         if (validWorkingGroupKeys.length < workingGroupKeys.length) {
           addError = true;
+          enrollmentCodeValue = ENROLLMENT_CODE.INVALID_GROUP_OR_WORKING_GROUP;
+          await this.individualExclusionRepository.saveRawJson(
+            experiments.map((experiment) => {
+              return {
+                experiment,
+                user: experimentUser,
+                // doubt
+                // enrollmentCode: ENROLLMENT_CODE.NO_GROUP_SPECIFIED
+                enrollmentCode: enrollmentCodeValue,
+              };
+            })
+          );
         }
 
         const experimentWithInvalidGroupOrWorkingGroup = experiments.filter((experiment) => {
@@ -361,7 +358,7 @@ export class ExperimentAssignmentService {
           );
         });
 
-        await checkValidGroupExperiment(experimentWithInvalidGroupOrWorkingGroup, addError);
+        await checkValidGroupExperiment(experimentWithInvalidGroupOrWorkingGroup, enrollmentCodeValue, addError);
       }
     }
 
@@ -384,6 +381,15 @@ export class ExperimentAssignmentService {
       ]);
 
       if (userExcluded.length > 0) {
+        this.individualExclusionRepository.saveRawJson(
+          experiments.map((experiment) => {
+            return {
+              experiment,
+              user: experimentUser,
+              enrollmentCode: ENROLLMENT_CODE.PARTICIPANT_ON_EXCLUSION_LIST,
+            };
+          })
+        );
         // return null if the user is excluded from the experiment
         return [];
       }
@@ -927,6 +933,8 @@ export class ExperimentAssignmentService {
             {
               experiment,
               user,
+              // doubt
+              enrollmentCode: ENROLLMENT_CODE.GROUP_ON_EXCLUSION_LIST,
             },
           ]);
         }
@@ -937,6 +945,8 @@ export class ExperimentAssignmentService {
               {
                 experiment,
                 user,
+                // doubt
+                enrollmentCode: ENROLLMENT_CODE.ASSIGN,
               },
             ]);
           }
@@ -984,6 +994,8 @@ export class ExperimentAssignmentService {
                   user,
                   condition: previewAssigned.experimentCondition,
                   assignmentType: ASSIGNMENT_TYPE.MANUAL,
+                  // doubt
+                  enrollmentCode: ENROLLMENT_CODE.ASSIGN,
                 });
                 return previewAssigned.experimentCondition;
               } else {
@@ -1027,6 +1039,8 @@ export class ExperimentAssignmentService {
                 user,
                 condition: previewAssigned.experimentCondition,
                 assignmentType: ASSIGNMENT_TYPE.MANUAL,
+                // doubt
+                enrollmentCode: ENROLLMENT_CODE.ASSIGN,
               });
               return previewAssigned.experimentCondition;
             } else {
@@ -1045,12 +1059,20 @@ export class ExperimentAssignmentService {
             user,
             condition: groupAssignment.condition,
             assignmentType: ASSIGNMENT_TYPE.ALGORITHMIC,
+            // doubt
+            enrollmentCode: ENROLLMENT_CODE.ASSIGN,
           });
           return groupAssignment.condition;
         } else {
           return;
         }
       } else if (groupExclusion) {
+        // updating enrollment code in individual exclusion:
+        this.individualExclusionRepository.saveRawJson([{
+          experiment,
+          user,
+          enrollmentCode: ENROLLMENT_CODE.EXCLUDED_DUE_TO_GROUP_LOGIC,
+        }]);
         return;
       } else {
         const randomConditions = this.weightedRandom(
@@ -1071,6 +1093,8 @@ export class ExperimentAssignmentService {
                 user,
                 condition: experimentalCondition,
                 assignmentType: ASSIGNMENT_TYPE.ALGORITHMIC,
+                // doubt
+                enrollmentCode: ENROLLMENT_CODE.ASSIGN,
               }),
             ]);
             return experimentalCondition;
@@ -1084,6 +1108,8 @@ export class ExperimentAssignmentService {
               user,
               condition: experimentalCondition,
               assignmentType: ASSIGNMENT_TYPE.ALGORITHMIC,
+              // doubt
+              enrollmentCode: ENROLLMENT_CODE.ASSIGN,
             });
             return experimentalCondition;
           } else {

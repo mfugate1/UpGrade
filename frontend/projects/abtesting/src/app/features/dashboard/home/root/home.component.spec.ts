@@ -11,14 +11,14 @@ describe('HomeComponent', () => {
   let component: HomeComponent;
   let fixture: ComponentFixture<HomeComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [ HomeComponent, ExperimentListComponent ],
       imports: [TestingModule, NgxSkeletonLoaderModule],
       providers: [ExperimentService, AuthService]
     })
     .compileComponents();
-  }));
+  });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(HomeComponent);

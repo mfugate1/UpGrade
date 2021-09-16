@@ -4,11 +4,19 @@ import { ExperimentCondition } from './ExperimentCondition';
 import { Experiment } from './Experiment';
 import { ExperimentUser } from './ExperimentUser';
 import { ASSIGNMENT_TYPE } from '../../types/index';
+import { ENROLLMENT_CODE } from 'upgrade_types';
 
 @Entity()
 export class IndividualAssignment extends BaseModel {
   @PrimaryColumn()
   public id: string;
+
+  @Column({
+    type: 'enum',
+    enum: ENROLLMENT_CODE,
+    nullable: true,
+  })
+  public enrollmentCode: ENROLLMENT_CODE | null;
 
   @Index()
   @ManyToOne((type) => Experiment, { onDelete: 'CASCADE' })
@@ -27,4 +35,8 @@ export class IndividualAssignment extends BaseModel {
     default: ASSIGNMENT_TYPE.ALGORITHMIC,
   })
   public assignmentType: ASSIGNMENT_TYPE;
+}
+
+export function getIndividualExperimentPointID(partitionId: string, userId: string): string {
+  return `${partitionId}_${userId}`;
 }
