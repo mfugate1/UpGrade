@@ -42,10 +42,12 @@ export class ExperimentUserService {
       return user;
     });
     // insert or update in the database
-    const updatedUsers = await this.userRepository.save(multipleUsers);
+    // const updatedUsers = await this.userRepository.save(multipleUsers);
+    // currently upserting only 1 user, we need to upsert all users:
+    const updatedUsers = await this.userRepository.upsertExperimentUser(multipleUsers[0]);
 
     // update assignment if user group is changed
-    const assignmentUpdated = updatedUsers.map((user: ExperimentUser, index: number) => {
+    const assignmentUpdated = [updatedUsers].map((user: ExperimentUser, index: number) => {
       if (user.group && users[index].group) {
         return this.removeAssignments(user.id, users[index].group, user.group);
       }
@@ -54,7 +56,7 @@ export class ExperimentUserService {
 
     // wait for all assignment update to get complete
     await Promise.all(assignmentUpdated);
-    return updatedUsers;
+    return [updatedUsers];
   }
 
   public async setAliasesForUser(userId: string, aliases: string[]): Promise<ExperimentUser[]> {
