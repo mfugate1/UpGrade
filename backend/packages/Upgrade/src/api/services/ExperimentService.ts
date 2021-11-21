@@ -86,7 +86,17 @@ export class ExperimentService {
       .addOrderBy('conditions.order', 'ASC')
       .addOrderBy('partitions.order', 'ASC');
     if (searchParams) {
-      const customSearchString = searchParams.string.split(' ').join(`:*&`);
+      const processedSearchString = searchParams.string
+        .replace(/\s\s+/g, ' ')
+        .trim()
+        .replace(':', '')
+        .replace('*', '')
+        .replace('&', '');
+
+      const customSearchString = processedSearchString
+        .split(' ')
+        .map((word) => word.trim())
+        .join(`:*&`);
       // add search query
       const postgresSearchString = this.postgresSearchString(searchParams.key);
       queryBuilder = queryBuilder
