@@ -1,5 +1,28 @@
+import json
 import random
 import requests
+from experiment_data import experimentIds
+
+def fetchExperiments(protocol, host, allExperimentPartitionIDConditionPair):
+    url = protocol + f"://{host}/api/experiments/single"
+
+    for exp in experimentIds:
+        id = exp["id"]
+        response = requests.get(f"{url}/{id}")
+        if response.status_code != 200:
+            print(f"fetchExperiment Failed with {response.status_code}")
+        else:
+            print("Successfully fetched experiment")
+            experimentData = json.loads(response.text)
+            for i in range(len(experimentData["conditions"])):
+                expPoint = experimentData["partitions"][i]["expPoint"]
+                expId = experimentData["partitions"][i]["expId"]
+                conditionCode = experimentData["conditions"][i]["conditionCode"]
+                PartitionIDConditionPair = {"experimentPoint": expPoint, "partitionId" : expId, "condition" : conditionCode}
+                allExperimentPartitionIDConditionPair.append(PartitionIDConditionPair)
+                
+    return allExperimentPartitionIDConditionPair
+        
 
 def createExperiment(protocol, host, allExperimentPartitionIDConditionPair):
     url = protocol + f"://{host}/api/experiments"

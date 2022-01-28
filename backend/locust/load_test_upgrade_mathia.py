@@ -1,6 +1,7 @@
 from datetime import datetime
 import random
 import uuid
+from venv import create
 from  upgrade_mathia_data import modules, workspaces
 from locust import HttpUser, SequentialTaskSet, task, tag, between
 import createExperiment
@@ -14,13 +15,20 @@ allExperimentPartitionIDConditionPair = []
 protocol = "http"
 host = "localhost:3030"
 
+useexisting = input("Use existing experiments? Y/N: ")
+
+if useexisting == 'Y' or useexisting == 'y':
+    allExperimentPartitionIDConditionPair = createExperiment.fetchExperiments(protocol, host, allExperimentPartitionIDConditionPair)
+
+else:
 # create new experiments:
-experimentCount = int(input("Enter the number of experiments to be created: "))
+    experimentCount = int(input("Enter the number of experiments to be created: "))
 
-for i in range(experimentCount):
-    # returning the updated partionconditionpair list:
-    allExperimentPartitionIDConditionPair = createExperiment.createExperiment(protocol, host, allExperimentPartitionIDConditionPair)
+    for i in range(experimentCount):
+        # returning the updated partionconditionpair list:
+        allExperimentPartitionIDConditionPair = createExperiment.createExperiment(protocol, host, allExperimentPartitionIDConditionPair)
 
+print(allExperimentPartitionIDConditionPair)
 ### Start enrolling students in the newly created experiment: ###
 #Return a new Student
 def initStudent():
@@ -199,7 +207,7 @@ class UpgradeUserTask(SequentialTaskSet):
         print("/assign portal for userid: " + self.student["studentId"])
         data = {
             "userId": self.student["studentId"],
-            "context": "portal"
+            "context": "addition" #context needs to match fetched experiments
         }
 
         with self.client.post(url, json = data, catch_response = True) as response:
