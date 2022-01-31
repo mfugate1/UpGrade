@@ -20,15 +20,19 @@ useexisting = input("Use existing experiments? Y/N: ")
 if useexisting == 'Y' or useexisting == 'y':
     allExperimentPartitionIDConditionPair = createExperiment.fetchExperiments(protocol, host, allExperimentPartitionIDConditionPair)
 
-else:
-# create new experiments:
+#if there are no experiments
+if not allExperimentPartitionIDConditionPair:
+    # create new experiments:
     experimentCount = int(input("Enter the number of experiments to be created: "))
+    
+    #create at least one experiment
+    if experimentCount < 1:
+        experimentCount = 1
 
     for i in range(experimentCount):
         # returning the updated partionconditionpair list:
         allExperimentPartitionIDConditionPair = createExperiment.createExperiment(protocol, host, allExperimentPartitionIDConditionPair)
 
-print(allExperimentPartitionIDConditionPair)
 ### Start enrolling students in the newly created experiment: ###
 #Return a new Student
 def initStudent():
