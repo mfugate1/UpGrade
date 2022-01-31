@@ -24,7 +24,7 @@ if useexisting == 'Y' or useexisting == 'y':
 if not allExperimentPartitionIDConditionPair:
     # create new experiments:
     experimentCount = int(input("Enter the number of experiments to be created: "))
-    
+
     #create at least one experiment
     if experimentCount < 1:
         experimentCount = 1
@@ -211,7 +211,7 @@ class UpgradeUserTask(SequentialTaskSet):
         print("/assign portal for userid: " + self.student["studentId"])
         data = {
             "userId": self.student["studentId"],
-            "context": "addition" #context needs to match fetched experiments
+            "context": "portal" #context needs to match fetched experiments
         }
 
         with self.client.post(url, json = data, catch_response = True) as response:
