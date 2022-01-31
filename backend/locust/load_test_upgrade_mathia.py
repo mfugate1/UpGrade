@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import random
 import uuid
 from venv import create
@@ -13,25 +14,25 @@ allExperimentPartitionIDConditionPair = []
 
 # Setting host URL's:
 protocol = "http"
-host = "localhost:3030"
+host = "upgradeapi.qa-cli.com"
 
-useexisting = input("Use existing experiments? Y/N: ")
+# useexisting = input("Use existing experiments? Y/N: ")
 
-if useexisting == 'Y' or useexisting == 'y':
-    allExperimentPartitionIDConditionPair = createExperiment.fetchExperiments(protocol, host, allExperimentPartitionIDConditionPair)
+# if useexisting == 'Y' or useexisting == 'y':
+#     allExperimentPartitionIDConditionPair = createExperiment.fetchExperiments(protocol, host, allExperimentPartitionIDConditionPair)
 
-#if there are no experiments
-if not allExperimentPartitionIDConditionPair:
-    # create new experiments:
-    experimentCount = int(input("Enter the number of experiments to be created: "))
+# #if there are no experiments
+# if not allExperimentPartitionIDConditionPair:
+#     # create new experiments:
+#     experimentCount = int(input("Enter the number of experiments to be created: "))
 
-    #create at least one experiment
-    if experimentCount < 1:
-        experimentCount = 1
+#     #create at least one experiment
+#     if experimentCount < 1:
+#         experimentCount = 1
 
-    for i in range(experimentCount):
-        # returning the updated partionconditionpair list:
-        allExperimentPartitionIDConditionPair = createExperiment.createExperiment(protocol, host, allExperimentPartitionIDConditionPair)
+#     for i in range(experimentCount):
+#         # returning the updated partionconditionpair list:
+#         allExperimentPartitionIDConditionPair = createExperiment.createExperiment(protocol, host, allExperimentPartitionIDConditionPair)
 
 ### Start enrolling students in the newly created experiment: ###
 #Return a new Student
@@ -280,6 +281,7 @@ class UpgradeUserTask(SequentialTaskSet):
         with self.client.post(url, json = data, catch_response = True) as response:
             if response.status_code != 200:
                 print(f"getAllExperimentConditions in assign-prog Failed with {response.status_code}")
+            self.assignedWorkspaces = json.loads(response.text)
 
     # mark is called after finishing a workspace. In reality, mark is called 15-30 mins after assign
     # Task 7: Student count gets incremented here on marking complete
@@ -290,24 +292,24 @@ class UpgradeUserTask(SequentialTaskSet):
         print("/mark for userid: " + self.student["studentId"])
 
         # pick a random pair of PartitionIdConditionId from allExperimentPartitionIDConditionPair
-        markPartitionIDConditionPair = random.choice(allExperimentPartitionIDConditionPair)
-
-        data = {
-            "userId": self.student["studentId"],
-            "experimentPoint": markPartitionIDConditionPair['experimentPoint'],
-            "partitionId": markPartitionIDConditionPair['partitionId'],
-            "condition": markPartitionIDConditionPair['condition']
-        }
-
-        # pick a random assigned workspace - requires /assign response to be saved
-        # markPartitionIDConditionPair = random.choice(self.assignedWorkspaces)
+        # markPartitionIDConditionPair = random.choice(allExperimentPartitionIDConditionPair)
 
         # data = {
         #     "userId": self.student["studentId"],
-        #     "experimentPoint": markPartitionIDConditionPair['expPoint'],
-        #     "partitionId": markPartitionIDConditionPair['expId'],
-        #     "condition": markPartitionIDConditionPair['assignedCondition']['conditionCode']
+        #     "experimentPoint": markPartitionIDConditionPair['experimentPoint'],
+        #     "partitionId": markPartitionIDConditionPair['partitionId'],
+        #     "condition": markPartitionIDConditionPair['condition']
         # }
+
+        # pick a random assigned workspace - requires /assign response to be saved
+        markPartitionIDConditionPair = random.choice(self.assignedWorkspaces)
+
+        data = {
+            "userId": self.student["studentId"],
+            "experimentPoint": markPartitionIDConditionPair['expPoint'],
+            "partitionId": markPartitionIDConditionPair['expId'],
+            "condition": markPartitionIDConditionPair['assignedCondition']['conditionCode']
+        }
 
         with self.client.post(url, json = data, catch_response = True) as response:
             if response.status_code != 200:
@@ -321,24 +323,24 @@ class UpgradeUserTask(SequentialTaskSet):
         print("/failed for userid: " + self.student["studentId"])
 
         # pick a random pair of PartitionIdConditionId from allExperimentPartitionIDConditionPair
-        markPartitionIDConditionPair = random.choice(allExperimentPartitionIDConditionPair)
-
-        data = {
-            "userId": self.student["studentId"],
-            "experimentPoint": markPartitionIDConditionPair['experimentPoint'],
-            "partitionId": markPartitionIDConditionPair['partitionId'],
-            "condition": markPartitionIDConditionPair['condition']
-        }
-
-        # pick a random assigned workspace - requires /assign response to be saved
-        # markPartitionIDConditionPair = random.choice(self.assignedWorkspaces)
+        # markPartitionIDConditionPair = random.choice(allExperimentPartitionIDConditionPair)
 
         # data = {
-        #     "reason": "locust tests",
-        #     "experimentPoint": markPartitionIDConditionPair['expPoint'],
         #     "userId": self.student["studentId"],
-        #     "experimentId": markPartitionIDConditionPair['expId']
+        #     "experimentPoint": markPartitionIDConditionPair['experimentPoint'],
+        #     "partitionId": markPartitionIDConditionPair['partitionId'],
+        #     "condition": markPartitionIDConditionPair['condition']
         # }
+
+        # pick a random assigned workspace - requires /assign response to be saved
+        markPartitionIDConditionPair = random.choice(self.assignedWorkspaces)
+
+        data = {
+            "reason": "locust tests",
+            "experimentPoint": markPartitionIDConditionPair['expPoint'],
+            "userId": self.student["studentId"],
+            "experimentId": markPartitionIDConditionPair['expId']
+        }
 
         with self.client.post(url, json = data, catch_response = True) as response:
             if response.status_code != 200:
